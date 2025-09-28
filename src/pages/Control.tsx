@@ -3,6 +3,9 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useTrafficSystem } from "@/hooks/useTrafficSystem";
+import { DecisionLog } from "@/components/DecisionLog";
+import { SystemHealth } from "@/components/SystemHealth";
 import { 
   Settings, 
   Power, 
@@ -13,7 +16,9 @@ import {
   Play,
   Users,
   Truck,
-  PartyPopper
+  PartyPopper,
+  CheckCircle,
+  Activity
 } from "lucide-react";
 
 const presetModes = [
@@ -40,16 +45,9 @@ const presetModes = [
   },
 ];
 
-const intersections = [
-  { id: 1, name: 'Main St & 1st Ave', currentSignal: 'green', aiSuggestion: 'extend_green', confidence: 92 },
-  { id: 2, name: 'Oak St & 2nd Ave', currentSignal: 'red', aiSuggestion: 'maintain_red', confidence: 88 },
-  { id: 3, name: 'Pine St & 3rd Ave', currentSignal: 'amber', aiSuggestion: 'switch_to_red', confidence: 95 },
-  { id: 4, name: 'Elm St & 4th Ave', currentSignal: 'green', aiSuggestion: 'reduce_green', confidence: 78 },
-];
-
 export default function Control() {
+  const { intersections, decisions, systemMode, setSystemMode, manualOverride, applyAIDecision } = useTrafficSystem();
   const [selectedIntersection, setSelectedIntersection] = useState(1);
-  const [manualOverride, setManualOverride] = useState(false);
   const [selectedMode, setSelectedMode] = useState('emergency');
 
   return (
@@ -61,15 +59,18 @@ export default function Control() {
             <p className="text-muted-foreground">Manual override and AI suggestion management</p>
           </div>
           <div className="flex items-center space-x-4">
-            <Badge variant={manualOverride ? "destructive" : "default"}>
-              {manualOverride ? "Manual Override Active" : "AI Control Active"}
+            <Badge variant={systemMode.current === 'manual' ? "destructive" : "default"}>
+              {systemMode.current === 'manual' ? "Manual Override Active" : "AI Control Active"}
             </Badge>
             <Button
-              variant={manualOverride ? "destructive" : "outline"}
-              onClick={() => setManualOverride(!manualOverride)}
+              variant={systemMode.current === 'manual' ? "destructive" : "outline"}
+              onClick={() => setSystemMode(prev => ({ 
+                ...prev, 
+                current: prev.current === 'manual' ? 'auto' : 'manual' 
+              }))}
             >
               <Power className="mr-2 h-4 w-4" />
-              {manualOverride ? "Disable Override" : "Enable Override"}
+              {systemMode.current === 'manual' ? "Disable Override" : "Enable Override"}
             </Button>
           </div>
         </div>
@@ -109,21 +110,24 @@ export default function Control() {
                     <Button 
                       variant="outline" 
                       className="flex-1 border-traffic-red text-traffic-red hover:bg-traffic-red hover:text-white"
-                      disabled={!manualOverride}
+                      disabled={systemMode.current !== 'manual'}
+                      onClick={() => manualOverride(selectedIntersection, 'red')}
                     >
                       Force Red
                     </Button>
                     <Button 
                       variant="outline" 
                       className="flex-1 border-traffic-amber text-traffic-amber hover:bg-traffic-amber hover:text-white"
-                      disabled={!manualOverride}
+                      disabled={systemMode.current !== 'manual'}
+                      onClick={() => manualOverride(selectedIntersection, 'amber')}
                     >
                       Force Amber
                     </Button>
                     <Button 
                       variant="outline" 
                       className="flex-1 border-traffic-green text-traffic-green hover:bg-traffic-green hover:text-white"
-                      disabled={!manualOverride}
+                      disabled={systemMode.current !== 'manual'}
+                      onClick={() => manualOverride(selectedIntersection, 'green')}
                     >
                       Force Green
                     </Button>
@@ -149,8 +153,19 @@ export default function Control() {
                     </div>
                     <div>
                       <span className="text-muted-foreground">Time Remaining:</span>
-                      <p className="font-mono font-bold">00:42</p>
+                      <p className="font-mono font-bold">
+                        00:{String(intersections.find(i => i.id === selectedIntersection)?.timer || 0).padStart(2, '0')}
+                      </p>
                     </div>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <span className="text-muted-foreground text-xs">Last AI Decision:</span>
+                    <p className="text-sm font-medium">
+                      {intersections.find(i => i.id === selectedIntersection)?.lastDecision}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {intersections.find(i => i.id === selectedIntersection)?.decisionReason}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -189,7 +204,13 @@ export default function Control() {
                         {intersection.aiSuggestion.replace('_', ' ')}
                       </span>
                     </div>
-                    <Button size="sm" variant="outline" className="w-full mt-2">
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="w-full mt-2"
+                      onClick={() => applyAIDecision(intersection.id)}
+                      disabled={systemMode.current === 'manual'}
+                    >
                       Apply Suggestion
                     </Button>
                   </motion.div>
@@ -275,31 +296,10 @@ export default function Control() {
           </Card>
 
           {/* System Health */}
-          <Card className="dashboard-card">
-            <CardHeader>
-              <CardTitle>System Health</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Camera Systems</span>
-                  <Badge variant="default" className="bg-success text-white">Online</Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">IoT Sensors</span>
-                  <Badge variant="default" className="bg-success text-white">Online</Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">AI Processing</span>
-                  <Badge variant="default" className="bg-success text-white">Active</Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Network Connection</span>
-                  <Badge variant="default" className="bg-warning text-white">Degraded</Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <SystemHealth />
+
+          {/* AI Decision Log */}
+          <DecisionLog decisions={decisions.slice(0, 10)} />
         </div>
       </div>
     </div>

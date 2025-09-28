@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useTrafficSystem } from "@/hooks/useTrafficSystem";
 import { 
   Monitor, 
   Camera, 
@@ -15,16 +16,9 @@ import {
   Activity,
   Settings,
   Play,
-  Pause
+  Pause,
+  CheckCircle
 } from "lucide-react";
-
-// Mock intersection data
-const intersections = [
-  { id: 1, name: "Main St & 1st Ave", status: "green", timer: 45, cars: 12, trucks: 2, bikes: 3 },
-  { id: 2, name: "Oak St & 2nd Ave", status: "amber", timer: 5, cars: 8, trucks: 1, bikes: 1 },
-  { id: 3, name: "Pine St & 3rd Ave", status: "red", timer: 32, cars: 15, trucks: 4, bikes: 2 },
-  { id: 4, name: "Elm St & 4th Ave", status: "green", timer: 28, cars: 6, trucks: 0, bikes: 5 },
-];
 
 // Mock video feeds
 const videoFeeds = [
@@ -51,8 +45,7 @@ function TrafficLight({ status, timer }: { status: string; timer: number }) {
 }
 
 export default function Dashboard() {
-  const [mode, setMode] = useState<'auto' | 'semi' | 'manual'>('auto');
-  const [isPlaying, setIsPlaying] = useState(true);
+  const { intersections, systemMode, setSystemMode, isRunning, setIsRunning } = useTrafficSystem();
   const [notifications, setNotifications] = useState([
     { id: 1, type: 'emergency', message: 'Emergency vehicle detected at Main St - Green wave activated', time: '14:32' },
     { id: 2, type: 'congestion', message: 'High congestion detected at Pine St intersection', time: '14:28' },
@@ -61,15 +54,28 @@ export default function Dashboard() {
 
   // Simulate real-time updates
   useEffect(() => {
-    if (!isPlaying) return;
+    if (!isRunning) return;
     
     const interval = setInterval(() => {
-      // Update timers and occasionally add notifications
-      if (Math.random() > 0.9) {
+      // Update notifications based on intersection events
+      const emergencyIntersections = intersections.filter(i => i.emergencyVehicle);
+      const congestionIntersections = intersections.filter(i => i.congestionLevel === 'high');
+      
+      if (emergencyIntersections.length > 0 && Math.random() > 0.7) {
         const newNotification = {
           id: Date.now(),
-          type: Math.random() > 0.5 ? 'info' : 'warning',
-          message: 'AI optimized signal timing at Elm St intersection',
+          type: 'emergency',
+          message: `Emergency vehicle priority activated at ${emergencyIntersections[0].name}`,
+          time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
+        };
+        setNotifications(prev => [newNotification, ...prev.slice(0, 4)]);
+      }
+      
+      if (congestionIntersections.length > 0 && Math.random() > 0.8) {
+        const newNotification = {
+          id: Date.now(),
+          type: 'warning',
+          message: `High congestion detected at ${congestionIntersections[0].name}`,
           time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
         };
         setNotifications(prev => [newNotification, ...prev.slice(0, 4)]);
@@ -77,7 +83,7 @@ export default function Dashboard() {
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [isPlaying]);
+  }, [isRunning, intersections]);
 
   return (
     <div className="min-h-screen bg-gradient-dashboard p-6">
@@ -96,10 +102,10 @@ export default function Dashboard() {
                 {['auto', 'semi', 'manual'].map((m) => (
                   <Button
                     key={m}
-                    variant={mode === m ? 'default' : 'ghost'}
+                    variant={systemMode.current === m ? 'default' : 'ghost'}
                     size="sm"
-                    onClick={() => setMode(m as any)}
-                    className={mode === m ? 'bg-accent text-accent-foreground' : ''}
+                    onClick={() => setSystemMode(prev => ({ ...prev, current: m as any }))}
+                    className={systemMode.current === m ? 'bg-accent text-accent-foreground' : ''}
                   >
                     {m.charAt(0).toUpperCase() + m.slice(1)}
                   </Button>
@@ -109,11 +115,11 @@ export default function Dashboard() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setIsPlaying(!isPlaying)}
+              onClick={() => setIsRunning(!isRunning)}
               className="border-accent/30"
             >
-              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-              {isPlaying ? 'Pause' : 'Play'}
+              {isRunning ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+              {isRunning ? 'Pause' : 'Play'}
             </Button>
           </div>
         </div>
@@ -190,9 +196,15 @@ export default function Dashboard() {
                           <Bike className="h-3 w-3 mr-1" />
                           {intersection.bikes}
                         </div>
+                        {intersection.emergencyVehicle && (
+                          <div className="flex items-center text-emergency">
+                            <AlertTriangle className="h-3 w-3 mr-1" />
+                            Emergency
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <TrafficLight status={intersection.status} timer={intersection.timer} />
+                    <TrafficLight status={intersection.currentSignal} timer={intersection.timer} />
                   </div>
                 ))}
               </div>
@@ -231,16 +243,31 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-emergency/10 border border-emergency/30 rounded-lg">
-                  <div className="flex items-center">
-                    <Ambulance className="h-5 w-5 text-emergency mr-3" />
-                    <div>
-                      <p className="text-sm font-medium">Emergency Vehicle</p>
-                      <p className="text-xs text-muted-foreground">Main St approaching</p>
+                {intersections.some(i => i.emergencyVehicle) ? (
+                  <div className="flex items-center justify-between p-3 bg-emergency/10 border border-emergency/30 rounded-lg">
+                    <div className="flex items-center">
+                      <Ambulance className="h-5 w-5 text-emergency mr-3" />
+                      <div>
+                        <p className="text-sm font-medium">Emergency Vehicle</p>
+                        <p className="text-xs text-muted-foreground">
+                          {intersections.find(i => i.emergencyVehicle)?.name} - Priority active
+                        </p>
+                      </div>
                     </div>
+                    <Badge variant="destructive">Active</Badge>
                   </div>
-                  <Badge variant="destructive">Active</Badge>
-                </div>
+                ) : (
+                  <div className="flex items-center justify-between p-3 bg-success/10 border border-success/30 rounded-lg">
+                    <div className="flex items-center">
+                      <CheckCircle className="h-5 w-5 text-success mr-3" />
+                      <div>
+                        <p className="text-sm font-medium">Normal Operations</p>
+                        <p className="text-xs text-muted-foreground">No emergency vehicles detected</p>
+                      </div>
+                    </div>
+                    <Badge variant="default" className="bg-success">Clear</Badge>
+                  </div>
+                )}
                 
                 <div className="p-3 bg-card/50 rounded-lg">
                   <div className="flex items-center">
