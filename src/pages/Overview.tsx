@@ -198,48 +198,129 @@ export default function Overview() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="relative h-96 bg-secondary/50 rounded-lg overflow-hidden">
-                  {/* Simulated map with traffic indicators */}
-                  <div className="traffic-heatmap" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="grid grid-cols-3 gap-8">
-                      {[...Array(9)].map((_, i) => (
-                        <div key={i} className="relative">
-                          <div className="w-6 h-6 rounded-full bg-card border-2 border-accent flex items-center justify-center">
-                            <div className={`w-2 h-2 rounded-full ${
-                              i % 3 === 0 ? 'traffic-light-green' : 
-                              i % 3 === 1 ? 'traffic-light-amber' : 'traffic-light-red'
+                <div className="relative h-96 bg-gradient-to-br from-secondary/30 to-secondary/70 rounded-lg overflow-hidden border border-accent/20">
+                  {/* Street Grid Background */}
+                  <div className="absolute inset-0">
+                    {/* Horizontal streets */}
+                    {[...Array(5)].map((_, i) => (
+                      <div 
+                        key={`h-${i}`}
+                        className="absolute w-full h-1 bg-muted/40"
+                        style={{ top: `${20 + i * 15}%` }}
+                      />
+                    ))}
+                    {/* Vertical streets */}
+                    {[...Array(5)].map((_, i) => (
+                      <div 
+                        key={`v-${i}`}
+                        className="absolute h-full w-1 bg-muted/40"
+                        style={{ left: `${20 + i * 15}%` }}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Traffic Flow Animations */}
+                  <div className="absolute inset-0">
+                    {/* Moving vehicles simulation */}
+                    {[...Array(6)].map((_, i) => (
+                      <div
+                        key={`vehicle-${i}`}
+                        className="absolute w-2 h-1 bg-accent/60 rounded animate-pulse"
+                        style={{
+                          left: `${10 + (i * 13)}%`,
+                          top: `${25 + Math.sin(i) * 20}%`,
+                          animationDelay: `${i * 0.5}s`
+                        }}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Traffic Intersections */}
+                  <div className="absolute inset-0">
+                    {[...Array(9)].map((_, i) => {
+                      const row = Math.floor(i / 3);
+                      const col = i % 3;
+                      const x = 25 + col * 25;
+                      const y = 25 + row * 25;
+                      
+                      return (
+                        <div 
+                          key={i} 
+                          className="absolute transform -translate-x-1/2 -translate-y-1/2"
+                          style={{ left: `${x}%`, top: `${y}%` }}
+                        >
+                          {/* Intersection background */}
+                          <div className="w-8 h-8 bg-card/80 border-2 border-accent/40 rounded-lg flex items-center justify-center backdrop-blur-sm">
+                            <div className={`w-3 h-3 rounded-full animate-pulse ${
+                              i % 3 === 0 ? 'traffic-light-green shadow-lg shadow-green-500/50' : 
+                              i % 3 === 1 ? 'traffic-light-amber shadow-lg shadow-yellow-500/50' : 
+                              'traffic-light-red shadow-lg shadow-red-500/50'
                             }`} />
                           </div>
+                          
+                          {/* Intersection label */}
+                          <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2">
+                            <span className="text-xs text-muted-foreground bg-card/60 px-1 rounded">
+                              I{i + 1}
+                            </span>
+                          </div>
+                          
+                          {/* Emergency vehicle at center intersection */}
                           {i === 4 && (
-                            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2">
-                              <Ambulance className="h-4 w-4 text-emergency animate-pulse" />
+                            <div className="absolute -top-10 left-1/2 transform -translate-x-1/2">
+                              <div className="bg-emergency/20 p-1 rounded-full animate-pulse">
+                                <Ambulance className="h-5 w-5 text-emergency" />
+                              </div>
                             </div>
                           )}
+                          
+                          {/* Traffic density indicators */}
+                          <div className="absolute -right-2 -top-2">
+                            <div className={`w-2 h-2 rounded-full ${
+                              i % 4 === 0 ? 'bg-traffic-red/70' :
+                              i % 4 === 1 ? 'bg-traffic-amber/70' :
+                              'bg-traffic-green/70'
+                            }`} />
+                          </div>
                         </div>
-                      ))}
-                    </div>
+                      );
+                    })}
                   </div>
-                  <div className="absolute bottom-4 left-4 bg-card/80 backdrop-blur-sm rounded-lg p-3">
+
+                  {/* Traffic Flow Heatmap Overlay */}
+                  <div className="absolute inset-0 bg-gradient-radial from-accent/10 via-transparent to-transparent opacity-50" />
+
+                  {/* Legend */}
+                  <div className="absolute bottom-4 left-4 bg-card/90 backdrop-blur-sm rounded-lg p-3 border border-accent/20">
                     <div className="flex items-center space-x-4 text-sm">
                       <div className="flex items-center">
-                        <div className="w-3 h-3 rounded-full traffic-light-green mr-2" />
-                        Low Traffic
+                        <div className="w-3 h-3 rounded-full traffic-light-green mr-2 shadow-sm" />
+                        <span className="text-xs">Free Flow</span>
                       </div>
                       <div className="flex items-center">
-                        <div className="w-3 h-3 rounded-full traffic-light-amber mr-2" />
-                        Moderate
+                        <div className="w-3 h-3 rounded-full traffic-light-amber mr-2 shadow-sm" />
+                        <span className="text-xs">Moderate</span>
                       </div>
                       <div className="flex items-center">
-                        <div className="w-3 h-3 rounded-full traffic-light-red mr-2" />
-                        Congested
+                        <div className="w-3 h-3 rounded-full traffic-light-red mr-2 shadow-sm" />
+                        <span className="text-xs">Congested</span>
                       </div>
                     </div>
                   </div>
-                  <div className="absolute top-4 right-4 bg-card/80 backdrop-blur-sm rounded-lg p-2">
+
+                  {/* Emergency Status */}
+                  <div className="absolute top-4 right-4 bg-emergency/10 backdrop-blur-sm rounded-lg p-2 border border-emergency/30">
                     <div className="flex items-center text-sm text-emergency">
-                      <Zap className="mr-2 h-4 w-4" />
-                      Emergency Active
+                      <Zap className="mr-2 h-4 w-4 animate-pulse" />
+                      <span className="text-xs">Emergency Override</span>
+                    </div>
+                  </div>
+
+                  {/* Live Data Indicator */}
+                  <div className="absolute top-4 left-4 bg-accent/10 backdrop-blur-sm rounded-lg p-2 border border-accent/30">
+                    <div className="flex items-center text-sm text-accent">
+                      <div className="w-2 h-2 bg-accent rounded-full mr-2 animate-pulse" />
+                      <span className="text-xs">Live Data</span>
                     </div>
                   </div>
                 </div>
