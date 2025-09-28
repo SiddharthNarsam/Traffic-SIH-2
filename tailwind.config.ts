@@ -47,6 +47,18 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Traffic management colors
+        traffic: {
+          red: "hsl(var(--traffic-red))",
+          amber: "hsl(var(--traffic-amber))",
+          green: "hsl(var(--traffic-green))",
+        },
+        emergency: {
+          DEFAULT: "hsl(var(--emergency))",
+          foreground: "hsl(var(--emergency-foreground))",
+        },
+        warning: "hsl(var(--warning))",
+        success: "hsl(var(--success))",
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -57,6 +69,12 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+      },
+      backgroundImage: {
+        "gradient-primary": "var(--gradient-primary)",
+        "gradient-accent": "var(--gradient-accent)",
+        "gradient-traffic": "var(--gradient-traffic)",
+        "gradient-dashboard": "var(--gradient-dashboard)",
       },
       borderRadius: {
         lg: "var(--radius)",
