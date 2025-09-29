@@ -3,44 +3,93 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+export type UserRole = 'admin' | 'traffic_officer' | 'emergency' | 'citizen';
+
+interface UserProfile {
+  id: string;
+  user_id: string;
+  email: string | null;
+  full_name: string | null;
+  role: UserRole;
+  assigned_intersections?: number[];
+  created_at: string;
+  updated_at: string;
+}
+
 interface AuthContextType {
   user: User | null;
+  profile: UserProfile | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, fullName: string, role: UserRole) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
+  hasRole: (roles: UserRole | UserRole[]) => boolean;
+  canAccessIntersection: (intersectionId: number) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Set up auth state listener FIRST
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          // Fetch user profile
+          await fetchUserProfile(session.user.id);
+        } else {
+          setProfile(null);
+        }
+        
         setLoading(false);
       }
     );
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Check for existing session
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        await fetchUserProfile(session.user.id);
+      }
+      
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, fullName: string) => {
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return;
+      }
+
+      setProfile(data);
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    }
+  };
+
+  const signUp = async (email: string, password: string, fullName: string, role: UserRole) => {
     try {
       setLoading(true);
       const redirectUrl = `${window.location.origin}/`;
@@ -52,6 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           emailRedirectTo: redirectUrl,
           data: {
             full_name: fullName,
+            role: role,
           }
         }
       });
@@ -64,8 +114,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
       } else {
         toast({
-          title: "Check your email",
-          description: "We've sent you a confirmation link to complete registration.",
+          title: "Account created successfully",
+          description: "You can now sign in with your credentials.",
         });
       }
 
@@ -101,6 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true);
       await supabase.auth.signOut();
+      setProfile(null);
       toast({
         title: "Signed out",
         description: "You have been successfully signed out.",
@@ -110,13 +161,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const hasRole = (roles: UserRole | UserRole[]): boolean => {
+    if (!profile) return false;
+    const roleArray = Array.isArray(roles) ? roles : [roles];
+    return roleArray.includes(profile.role);
+  };
+
+  const canAccessIntersection = (intersectionId: number): boolean => {
+    if (!profile) return false;
+    
+    // Admin can access all intersections
+    if (profile.role === 'admin') return true;
+    
+    // Traffic officers can only access assigned intersections
+    if (profile.role === 'traffic_officer') {
+      return profile.assigned_intersections?.includes(intersectionId) ?? false;
+    }
+    
+    // Emergency services can access all for routing
+    if (profile.role === 'emergency') return true;
+    
+    // Citizens have no direct intersection access
+    return false;
+  };
+
   const value = {
     user,
+    profile,
     session,
     loading,
     signUp,
     signIn,
     signOut,
+    hasRole,
+    canAccessIntersection,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

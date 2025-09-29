@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/contexts/AuthContext";
 import { 
   Clock, 
   TrendingDown, 
@@ -13,7 +14,9 @@ import {
   MapPin,
   Zap,
   Monitor,
-  Globe
+  Globe,
+  Settings,
+  BarChart3
 } from "lucide-react";
 
 // Animated counter component
@@ -53,6 +56,7 @@ function AnimatedCounter({
 
 export default function Overview() {
   const [currentTime, setCurrentTime] = useState(new Date());
+  const { profile } = useAuth();
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -94,6 +98,113 @@ export default function Overview() {
     }
   ];
 
+  const getRoleBasedCTA = () => {
+    if (!profile) {
+      return (
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Link to="/public">
+            <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
+              <Globe className="mr-2 h-5 w-5" />
+              View Public Portal
+            </Button>
+          </Link>
+          <Link to="/auth">
+            <Button variant="outline" size="lg" className="border-accent/30 text-accent hover:bg-accent/10">
+              <Monitor className="mr-2 h-5 w-5" />
+              Sign In
+            </Button>
+          </Link>
+        </div>
+      );
+    }
+
+    switch (profile.role) {
+      case 'admin':
+        return (
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link to="/dashboard">
+              <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                <Monitor className="mr-2 h-5 w-5" />
+                Launch Dashboard
+              </Button>
+            </Link>
+            <Link to="/admin">
+              <Button variant="outline" size="lg" className="border-accent/30 text-accent hover:bg-accent/10">
+                <Settings className="mr-2 h-5 w-5" />
+                Admin Panel
+              </Button>
+            </Link>
+          </div>
+        );
+      
+      case 'traffic_officer':
+        return (
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link to="/dashboard">
+              <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                <Monitor className="mr-2 h-5 w-5" />
+                Launch Dashboard
+              </Button>
+            </Link>
+            <Link to="/control">
+              <Button variant="outline" size="lg" className="border-accent/30 text-accent hover:bg-accent/10">
+                <Settings className="mr-2 h-5 w-5" />
+                Control Panel
+              </Button>
+            </Link>
+          </div>
+        );
+      
+      case 'emergency':
+        return (
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link to="/dashboard">
+              <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                <Monitor className="mr-2 h-5 w-5" />
+                Emergency Dashboard
+              </Button>
+            </Link>
+            <Link to="/control">
+              <Button variant="outline" size="lg" className="border-accent/30 text-accent hover:bg-accent/10">
+                <Ambulance className="mr-2 h-5 w-5" />
+                Priority Control
+              </Button>
+            </Link>
+          </div>
+        );
+      
+      case 'citizen':
+        return (
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link to="/simulation">
+              <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                <Play className="mr-2 h-5 w-5" />
+                View Simulation
+              </Button>
+            </Link>
+            <Link to="/analytics">
+              <Button variant="outline" size="lg" className="border-accent/30 text-accent hover:bg-accent/10">
+                <BarChart3 className="mr-2 h-5 w-5" />
+                Impact Reports
+              </Button>
+            </Link>
+          </div>
+        );
+      
+      default:
+        return (
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link to="/public">
+              <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                <Globe className="mr-2 h-5 w-5" />
+                Public Portal
+              </Button>
+            </Link>
+          </div>
+        );
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-dashboard">
       {/* Hero Section */}
@@ -116,20 +227,12 @@ export default function Overview() {
               Reduce Congestion, Save Time, Fuel & Lives through intelligent traffic signal optimization
               and real-time emergency vehicle prioritization.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/dashboard">
-                <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
-                  <Monitor className="mr-2 h-5 w-5" />
-                  View Dashboard
-                </Button>
-              </Link>
-              <Link to="/public">
-                <Button variant="outline" size="lg" className="border-accent/30 text-accent hover:bg-accent/10">
-                  <Globe className="mr-2 h-5 w-5" />
-                  Public Portal
-                </Button>
-              </Link>
-            </div>
+            {getRoleBasedCTA()}
+            {profile && (
+              <p className="text-sm text-accent mt-4">
+                Welcome back, {profile.full_name} ({profile.role.replace('_', ' ')})
+              </p>
+            )}
           </motion.div>
         </div>
       </section>

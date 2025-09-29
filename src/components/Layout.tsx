@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, UserRole } from "@/contexts/AuthContext";
+import { Badge } from "@/components/ui/badge";
 import { 
   Home, 
   Monitor, 
@@ -10,32 +11,75 @@ import {
   Users,
   Globe,
   LogIn,
-  LogOut
+  LogOut,
+  Shield,
+  Truck,
+  UserCheck
 } from "lucide-react";
 
-const getNavigation = (isAuthenticated: boolean) => {
-  const publicNav = [
-    { name: "Overview", href: "/", icon: Home },
-    { name: "Public", href: "/public", icon: Globe },
-  ];
+interface NavItem {
+  name: string;
+  href: string;
+  icon: any;
+  roles: UserRole[];
+}
 
-  const protectedNav = [
-    { name: "Overview", href: "/", icon: Home },
-    { name: "Dashboard", href: "/dashboard", icon: Monitor },
-    { name: "Control", href: "/control", icon: Settings },
-    { name: "Analytics", href: "/analytics", icon: BarChart3 },
-    { name: "Simulation", href: "/simulation", icon: Map },
-    { name: "Admin", href: "/admin", icon: Users },
-    { name: "Public", href: "/public", icon: Globe },
-  ];
+const navigationItems: NavItem[] = [
+  { name: "Overview", href: "/", icon: Home, roles: ['admin', 'traffic_officer', 'emergency', 'citizen'] },
+  { name: "Dashboard", href: "/dashboard", icon: Monitor, roles: ['admin', 'traffic_officer', 'emergency'] },
+  { name: "Control", href: "/control", icon: Settings, roles: ['admin', 'traffic_officer', 'emergency'] },
+  { name: "Analytics", href: "/analytics", icon: BarChart3, roles: ['admin', 'traffic_officer', 'emergency', 'citizen'] },
+  { name: "Simulation", href: "/simulation", icon: Map, roles: ['admin', 'traffic_officer', 'emergency', 'citizen'] },
+  { name: "Admin", href: "/admin", icon: Users, roles: ['admin'] },
+  { name: "Public", href: "/public", icon: Globe, roles: ['admin', 'traffic_officer', 'emergency', 'citizen'] },
+];
 
-  return isAuthenticated ? protectedNav : publicNav;
+const getRoleIcon = (role: UserRole) => {
+  switch (role) {
+    case 'admin':
+      return <Shield className="h-4 w-4" />;
+    case 'traffic_officer':
+      return <UserCheck className="h-4 w-4" />;
+    case 'emergency':
+      return <Truck className="h-4 w-4" />;
+    case 'citizen':
+      return <Globe className="h-4 w-4" />;
+    default:
+      return <UserCheck className="h-4 w-4" />;
+  }
+};
+
+const getRoleLabel = (role: UserRole) => {
+  switch (role) {
+    case 'admin':
+      return 'Administrator';
+    case 'traffic_officer':
+      return 'Traffic Officer';
+    case 'emergency':
+      return 'Emergency Services';
+    case 'citizen':
+      return 'Citizen';
+    default:
+      return 'User';
+  }
 };
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
-  const { user, signOut } = useAuth();
-  const navigation = getNavigation(!!user);
+  const { user, profile, signOut } = useAuth();
+
+  // Filter navigation based on user role
+  const getFilteredNavigation = () => {
+    if (!profile) {
+      return navigationItems.filter(item => item.href === '/' || item.href === '/public');
+    }
+    
+    return navigationItems.filter(item => 
+      item.roles.includes(profile.role)
+    );
+  };
+
+  const navigation = getFilteredNavigation();
 
   return (
     <div className="min-h-screen bg-gradient-dashboard">
@@ -73,11 +117,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <div className="text-sm text-muted-foreground">
                 System Status: <span className="text-success">Online</span>
               </div>
-              {user ? (
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-muted-foreground">
-                    Welcome, {user.email}
-                  </span>
+              {user && profile ? (
+                <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-2">
+                    <Badge variant="outline" className="border-accent/30 text-accent">
+                      {getRoleIcon(profile.role)}
+                      <span className="ml-1">{getRoleLabel(profile.role)}</span>
+                    </Badge>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-medium">{profile.full_name}</div>
+                    <div className="text-xs text-muted-foreground">{profile.email}</div>
+                  </div>
                   <Button 
                     variant="outline" 
                     size="sm" 

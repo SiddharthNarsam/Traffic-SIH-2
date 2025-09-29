@@ -30,31 +30,38 @@ const App = () => (
               <Route path="/" element={<Overview />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/public" element={<PublicPortal />} />
+              
+              {/* Protected Routes */}
               <Route path="/dashboard" element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['admin', 'traffic_officer', 'emergency']}>
                   <Dashboard />
                 </ProtectedRoute>
               } />
+              
               <Route path="/control" element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['admin', 'traffic_officer', 'emergency']}>
                   <Control />
                 </ProtectedRoute>
               } />
+              
               <Route path="/analytics" element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['admin', 'traffic_officer', 'emergency', 'citizen']}>
                   <Analytics />
                 </ProtectedRoute>
               } />
+              
               <Route path="/simulation" element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['admin', 'traffic_officer', 'emergency', 'citizen']}>
                   <Simulation />
                 </ProtectedRoute>
               } />
+              
               <Route path="/admin" element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['admin']}>
                   <Admin />
                 </ProtectedRoute>
               } />
+              
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Layout>

@@ -5,27 +5,79 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuth } from '@/contexts/AuthContext';
-import { LogIn, UserPlus, Car } from 'lucide-react';
+import { useAuth, UserRole } from '@/contexts/AuthContext';
+import { LogIn, UserPlus, Car, Shield, UserCheck, Truck, Globe } from 'lucide-react';
+
+const roleOptions = [
+  { 
+    value: 'admin' as UserRole, 
+    label: 'Administrator', 
+    icon: Shield,
+    description: 'Full system control and management'
+  },
+  { 
+    value: 'traffic_officer' as UserRole, 
+    label: 'Traffic Officer', 
+    icon: UserCheck,
+    description: 'Local intersection management'
+  },
+  { 
+    value: 'emergency' as UserRole, 
+    label: 'Emergency Services', 
+    icon: Truck,
+    description: 'Priority routing and clearance'
+  },
+  { 
+    value: 'citizen' as UserRole, 
+    label: 'Citizen', 
+    icon: Globe,
+    description: 'Public information and transparency'
+  },
+];
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [signInForm, setSignInForm] = useState({ email: '', password: '' });
-  const [signUpForm, setSignUpForm] = useState({ email: '', password: '', fullName: '', confirmPassword: '' });
+  const [signUpForm, setSignUpForm] = useState({ 
+    email: '', 
+    password: '', 
+    fullName: '', 
+    confirmPassword: '',
+    role: 'citizen' as UserRole
+  });
   const [activeTab, setActiveTab] = useState('signin');
   
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signUp, user, profile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Redirect authenticated users
+  // Redirect authenticated users based on their role
   useEffect(() => {
-    if (user) {
-      const from = location.state?.from?.pathname || '/dashboard';
-      navigate(from, { replace: true });
+    if (user && profile) {
+      const from = location.state?.from?.pathname;
+      let redirectPath = from;
+      
+      // If no specific redirect, use role-based default
+      if (!redirectPath || redirectPath === '/auth') {
+        switch (profile.role) {
+          case 'admin':
+          case 'traffic_officer':
+          case 'emergency':
+            redirectPath = '/dashboard';
+            break;
+          case 'citizen':
+            redirectPath = '/public';
+            break;
+          default:
+            redirectPath = '/';
+        }
+      }
+      
+      navigate(redirectPath, { replace: true });
     }
-  }, [user, navigate, location.state]);
+  }, [user, profile, navigate, location.state]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,21 +87,19 @@ export default function Auth() {
     const { error } = await signIn(signInForm.email, signInForm.password);
     setIsLoading(false);
     
-    if (!error) {
-      navigate('/dashboard');
-    }
+    // Navigation is handled by useEffect above
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!signUpForm.email || !signUpForm.password || !signUpForm.fullName) return;
+    if (!signUpForm.email || !signUpForm.password || !signUpForm.fullName || !signUpForm.role) return;
     
     if (signUpForm.password !== signUpForm.confirmPassword) {
       return;
     }
     
     setIsLoading(true);
-    const { error } = await signUp(signUpForm.email, signUpForm.password, signUpForm.fullName);
+    const { error } = await signUp(signUpForm.email, signUpForm.password, signUpForm.fullName, signUpForm.role);
     setIsLoading(false);
     
     if (!error) {
@@ -140,6 +190,30 @@ export default function Auth() {
                       onChange={(e) => setSignUpForm(prev => ({ ...prev, email: e.target.value }))}
                       required
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-role">Role</Label>
+                    <Select 
+                      value={signUpForm.role} 
+                      onValueChange={(value: UserRole) => setSignUpForm(prev => ({ ...prev, role: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select your role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {roleOptions.map((role) => (
+                          <SelectItem key={role.value} value={role.value}>
+                            <div className="flex items-center space-x-2">
+                              <role.icon className="h-4 w-4" />
+                              <div>
+                                <div className="font-medium">{role.label}</div>
+                                <div className="text-xs text-muted-foreground">{role.description}</div>
+                              </div>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-password">Password</Label>

@@ -1,12 +1,18 @@
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, UserRole } from '@/contexts/AuthContext';
 import { Navigate, useLocation } from 'react-router-dom';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  allowedRoles?: UserRole[];
+  requireAuth?: boolean;
 }
 
-export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, loading } = useAuth();
+export function ProtectedRoute({ 
+  children, 
+  allowedRoles = [], 
+  requireAuth = true 
+}: ProtectedRouteProps) {
+  const { user, profile, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -20,9 +26,36 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     );
   }
 
-  if (!user) {
+  // If authentication is required but user is not logged in
+  if (requireAuth && !user) {
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
+  // If specific roles are required
+  if (allowedRoles.length > 0 && profile) {
+    const hasRequiredRole = allowedRoles.includes(profile.role);
+    
+    if (!hasRequiredRole) {
+      // Redirect based on user role
+      const redirectPath = getRoleBasedRedirect(profile.role);
+      return <Navigate to={redirectPath} replace />;
+    }
+  }
+
   return <>{children}</>;
+}
+
+function getRoleBasedRedirect(role: UserRole): string {
+  switch (role) {
+    case 'admin':
+      return '/dashboard';
+    case 'traffic_officer':
+      return '/dashboard';
+    case 'emergency':
+      return '/dashboard';
+    case 'citizen':
+      return '/public';
+    default:
+      return '/';
+  }
 }
