@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 import { 
   Home, 
   Monitor, 
@@ -7,21 +8,34 @@ import {
   BarChart3, 
   Map,
   Users,
-  Globe
+  Globe,
+  LogIn,
+  LogOut
 } from "lucide-react";
 
-const navigation = [
-  { name: "Overview", href: "/", icon: Home },
-  { name: "Dashboard", href: "/dashboard", icon: Monitor },
-  { name: "Control", href: "/control", icon: Settings },
-  { name: "Analytics", href: "/analytics", icon: BarChart3 },
-  { name: "Simulation", href: "/simulation", icon: Map },
-  { name: "Admin", href: "/admin", icon: Users },
-  { name: "Public", href: "/public", icon: Globe },
-];
+const getNavigation = (isAuthenticated: boolean) => {
+  const publicNav = [
+    { name: "Overview", href: "/", icon: Home },
+    { name: "Public", href: "/public", icon: Globe },
+  ];
+
+  const protectedNav = [
+    { name: "Overview", href: "/", icon: Home },
+    { name: "Dashboard", href: "/dashboard", icon: Monitor },
+    { name: "Control", href: "/control", icon: Settings },
+    { name: "Analytics", href: "/analytics", icon: BarChart3 },
+    { name: "Simulation", href: "/simulation", icon: Map },
+    { name: "Admin", href: "/admin", icon: Users },
+    { name: "Public", href: "/public", icon: Globe },
+  ];
+
+  return isAuthenticated ? protectedNav : publicNav;
+};
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
+  const { user, signOut } = useAuth();
+  const navigation = getNavigation(!!user);
 
   return (
     <div className="min-h-screen bg-gradient-dashboard">
@@ -59,9 +73,29 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <div className="text-sm text-muted-foreground">
                 System Status: <span className="text-success">Online</span>
               </div>
-              <Button variant="outline" size="sm" className="border-accent/30 text-accent hover:bg-accent/10">
-                Emergency Mode
-              </Button>
+              {user ? (
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-muted-foreground">
+                    Welcome, {user.email}
+                  </span>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => signOut()}
+                    className="border-accent/30 text-accent hover:bg-accent/10"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                  </Button>
+                </div>
+              ) : (
+                <Link to="/auth">
+                  <Button variant="outline" size="sm" className="border-accent/30 text-accent hover:bg-accent/10">
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Sign In
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         </div>

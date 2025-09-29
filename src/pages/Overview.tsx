@@ -11,7 +11,9 @@ import {
   Play,
   Activity,
   MapPin,
-  Zap
+  Zap,
+  Monitor,
+  Globe
 } from "lucide-react";
 
 // Animated counter component
@@ -116,15 +118,15 @@ export default function Overview() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/dashboard">
-                <Button size="lg" className="cyber-button group">
-                  <Play className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
-                  Launch Dashboard
+                <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                  <Monitor className="mr-2 h-5 w-5" />
+                  View Dashboard
                 </Button>
               </Link>
-              <Link to="/simulation">
+              <Link to="/public">
                 <Button variant="outline" size="lg" className="border-accent/30 text-accent hover:bg-accent/10">
-                  <Activity className="mr-2 h-5 w-5" />
-                  View Simulation
+                  <Globe className="mr-2 h-5 w-5" />
+                  Public Portal
                 </Button>
               </Link>
             </div>

@@ -3,7 +3,9 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useTrafficSystem } from "@/hooks/useTrafficSystem";
+import { useAuth } from "@/contexts/AuthContext";
 import { 
   Monitor, 
   Camera, 
@@ -46,11 +48,14 @@ function TrafficLight({ status, timer }: { status: string; timer: number }) {
 
 export default function Dashboard() {
   const { intersections, systemMode, setSystemMode, isRunning, setIsRunning } = useTrafficSystem();
+  const { user } = useAuth();
   const [notifications, setNotifications] = useState([
     { id: 1, type: 'emergency', message: 'Emergency vehicle detected at Main St - Green wave activated', time: '14:32' },
     { id: 2, type: 'congestion', message: 'High congestion detected at Pine St intersection', time: '14:28' },
     { id: 3, type: 'anomaly', message: 'Wrong-way vehicle detected on Oak St', time: '14:25' },
   ]);
+  const [showPermissionDialog, setShowPermissionDialog] = useState(false);
+  const [pendingModeChange, setPendingModeChange] = useState<string | null>(null);
 
   // Simulate real-time updates
   useEffect(() => {
@@ -85,6 +90,28 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, [isRunning, intersections]);
 
+  const handleModeChange = (mode: string) => {
+    if (mode === 'semi') {
+      setPendingModeChange(mode);
+      setShowPermissionDialog(true);
+    } else {
+      setSystemMode(prev => ({ ...prev, current: mode as any }));
+    }
+  };
+
+  const confirmModeChange = () => {
+    if (pendingModeChange) {
+      setSystemMode(prev => ({ ...prev, current: pendingModeChange as any }));
+      setShowPermissionDialog(false);
+      setPendingModeChange(null);
+    }
+  };
+
+  const cancelModeChange = () => {
+    setShowPermissionDialog(false);
+    setPendingModeChange(null);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-dashboard p-6">
       <div className="mx-auto max-w-7xl">
@@ -104,7 +131,7 @@ export default function Dashboard() {
                     key={m}
                     variant={systemMode.current === m ? 'default' : 'ghost'}
                     size="sm"
-                    onClick={() => setSystemMode(prev => ({ ...prev, current: m as any }))}
+                    onClick={() => handleModeChange(m)}
                     className={systemMode.current === m ? 'bg-accent text-accent-foreground' : ''}
                   >
                     {m.charAt(0).toUpperCase() + m.slice(1)}
@@ -308,6 +335,24 @@ export default function Dashboard() {
           </Card>
         </div>
       </div>
+
+      {/* Permission Dialog for Semi-Automatic Mode */}
+      <AlertDialog open={showPermissionDialog} onOpenChange={setShowPermissionDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Switch to Semi-Automatic Mode?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Semi-automatic mode allows the AI to make traffic signal adjustments automatically but may request your approval for critical decisions. This mode provides a balance between automation and human oversight.
+              <br /><br />
+              Do you want to enable semi-automatic mode for the traffic control system?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelModeChange}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmModeChange}>Enable Semi-Auto Mode</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
