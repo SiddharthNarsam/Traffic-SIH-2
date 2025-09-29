@@ -291,115 +291,125 @@ export default function Overview() {
               </CardHeader>
               <CardContent>
                 <div className="relative h-96 bg-gradient-to-br from-secondary/30 to-secondary/70 rounded-lg overflow-hidden border border-accent/20">
-                  {/* Street Grid Background */}
-                  <div className="absolute inset-0">
-                    {/* Horizontal streets */}
-                    {[...Array(5)].map((_, i) => (
-                      <div 
-                        key={`h-${i}`}
-                        className="absolute w-full h-1 bg-muted/40"
-                        style={{ top: `${20 + i * 15}%` }}
-                      />
-                    ))}
-                    {/* Vertical streets */}
-                    {[...Array(5)].map((_, i) => (
-                      <div 
-                        key={`v-${i}`}
-                        className="absolute h-full w-1 bg-muted/40"
-                        style={{ left: `${20 + i * 15}%` }}
-                      />
-                    ))}
-                  </div>
-
-                  {/* Traffic Flow Animations */}
-                  <div className="absolute inset-0">
-                    {/* Moving vehicles simulation */}
-                    {[...Array(6)].map((_, i) => (
-                      <div
-                        key={`vehicle-${i}`}
-                        className="absolute w-2 h-1 bg-accent/60 rounded animate-pulse"
-                        style={{
-                          left: `${10 + (i * 13)}%`,
-                          top: `${25 + Math.sin(i) * 20}%`,
-                          animationDelay: `${i * 0.5}s`
-                        }}
-                      />
-                    ))}
-                  </div>
-
-                  {/* Traffic Intersections */}
-                  <div className="absolute inset-0">
-                    {[...Array(9)].map((_, i) => {
-                      const row = Math.floor(i / 3);
-                      const col = i % 3;
-                      const x = 25 + col * 25;
-                      const y = 25 + row * 25;
-                      
-                      return (
-                        <div 
-                          key={i} 
-                          className="absolute transform -translate-x-1/2 -translate-y-1/2"
-                          style={{ left: `${x}%`, top: `${y}%` }}
-                        >
-                          {/* Intersection background */}
-                          <div className="w-8 h-8 bg-card/80 border-2 border-accent/40 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                            <div className={`w-3 h-3 rounded-full animate-pulse ${
-                              i % 3 === 0 ? 'traffic-light-green shadow-lg shadow-green-500/50' : 
-                              i % 3 === 1 ? 'traffic-light-amber shadow-lg shadow-yellow-500/50' : 
-                              'traffic-light-red shadow-lg shadow-red-500/50'
-                            }`} />
-                          </div>
-                          
-                          {/* Intersection label */}
-                          <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2">
-                            <span className="text-xs text-muted-foreground bg-card/60 px-1 rounded">
-                              I{i + 1}
-                            </span>
-                          </div>
-                          
-                          {/* Emergency vehicle at center intersection */}
-                          {i === 4 && (
-                            <div className="absolute -top-10 left-1/2 transform -translate-x-1/2">
-                              <div className="bg-emergency/20 p-1 rounded-full animate-pulse">
-                                <Ambulance className="h-5 w-5 text-emergency" />
-                              </div>
-                            </div>
-                          )}
-                          
-                          {/* Traffic density indicators */}
-                          <div className="absolute -right-2 -top-2">
-                            <div className={`w-2 h-2 rounded-full ${
-                              i % 4 === 0 ? 'bg-traffic-red/70' :
-                              i % 4 === 1 ? 'bg-traffic-amber/70' :
-                              'bg-traffic-green/70'
-                            }`} />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Traffic Flow Heatmap Overlay */}
-                  <div className="absolute inset-0 bg-gradient-radial from-accent/10 via-transparent to-transparent opacity-50" />
-
-                  {/* Legend */}
-                  <div className="absolute bottom-4 left-4 bg-card/90 backdrop-blur-sm rounded-lg p-3 border border-accent/20">
-                    <div className="flex items-center space-x-4 text-sm">
-                      <div className="flex items-center">
-                        <div className="w-3 h-3 rounded-full traffic-light-green mr-2 shadow-sm" />
-                        <span className="text-xs">Free Flow</span>
-                      </div>
-                      <div className="flex items-center">
-                        <div className="w-3 h-3 rounded-full traffic-light-amber mr-2 shadow-sm" />
-                        <span className="text-xs">Moderate</span>
-                      </div>
-                      <div className="flex items-center">
-                        <div className="w-3 h-3 rounded-full traffic-light-red mr-2 shadow-sm" />
-                        <span className="text-xs">Congested</span>
-                      </div>
+                  {/* Main Intersection */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    {/* Horizontal Road */}
+                    <div className="absolute w-full h-16 bg-muted/40 flex items-center justify-center">
+                      <div className="w-full h-2 bg-muted/60"></div>
+                    </div>
+                    
+                    {/* Vertical Road */}
+                    <div className="absolute h-full w-16 bg-muted/40 flex items-center justify-center">
+                      <div className="h-full w-2 bg-muted/60"></div>
+                    </div>
+                    
+                    {/* Central Intersection */}
+                    <div className="relative z-10 w-16 h-16 bg-card/90 border-4 border-accent/60 rounded-lg flex items-center justify-center backdrop-blur-sm shadow-lg">
+                      <div className="w-6 h-6 rounded-full traffic-light-green shadow-lg shadow-green-500/50 animate-pulse" />
+                    </div>
+                    
+                    {/* Intersection Label */}
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 translate-y-12 z-20">
+                      <span className="text-sm font-medium text-accent bg-card/80 px-2 py-1 rounded border border-accent/30">
+                        Main Intersection
+                      </span>
                     </div>
                   </div>
 
+                  {/* Heatmap Points for Each Road Direction */}
+                  {/* North Road - Incoming */}
+                  <div className="absolute top-16 left-1/2 transform -translate-x-1/2">
+                    <div className="flex flex-col items-center space-y-2">
+                      <div className="w-3 h-3 rounded-full bg-traffic-green/80 shadow-lg shadow-green-500/30 animate-pulse" />
+                      <div className="w-2 h-2 rounded-full bg-traffic-green/60" />
+                      <span className="text-xs text-muted-foreground">N-In: 12</span>
+                    </div>
+                  </div>
+                  
+                  {/* North Road - Outgoing */}
+                  <div className="absolute top-4 left-1/2 transform -translate-x-1/2 translate-x-8">
+                    <div className="flex flex-col items-center space-y-2">
+                      <div className="w-3 h-3 rounded-full bg-traffic-amber/80 shadow-lg shadow-yellow-500/30 animate-pulse" />
+                      <div className="w-2 h-2 rounded-full bg-traffic-amber/60" />
+                      <span className="text-xs text-muted-foreground">N-Out: 8</span>
+                    </div>
+                  </div>
+
+                  {/* South Road - Incoming */}
+                  <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2">
+                    <div className="flex flex-col items-center space-y-2">
+                      <span className="text-xs text-muted-foreground">S-In: 15</span>
+                      <div className="w-2 h-2 rounded-full bg-traffic-red/60" />
+                      <div className="w-3 h-3 rounded-full bg-traffic-red/80 shadow-lg shadow-red-500/30 animate-pulse" />
+                    </div>
+                  </div>
+                  
+                  {/* South Road - Outgoing */}
+                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 translate-x-8">
+                  {/* East Road - Incoming */}
+                  <div className="absolute right-16 top-1/2 transform -translate-y-1/2">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs text-muted-foreground">E-In: 10</span>
+                      <div className="w-2 h-2 rounded-full bg-traffic-amber/60" />
+                      <div className="w-3 h-3 rounded-full bg-traffic-amber/80 shadow-lg shadow-yellow-500/30 animate-pulse" />
+                    </div>
+                  </div>
+                  
+                  {/* East Road - Outgoing */}
+                  <div className="absolute right-4 top-1/2 transform -translate-y-1/2 translate-y-8">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs text-muted-foreground">E-Out: 14</span>
+                      <div className="w-2 h-2 rounded-full bg-traffic-red/60" />
+                      <div className="w-3 h-3 rounded-full bg-traffic-red/80 shadow-lg shadow-red-500/30 animate-pulse" />
+                    </div>
+                  </div>
+                    <div className="flex flex-col items-center space-y-2">
+                  {/* West Road - Incoming */}
+                  <div className="absolute left-16 top-1/2 transform -translate-y-1/2">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 rounded-full bg-traffic-green/80 shadow-lg shadow-green-500/30 animate-pulse" />
+                      <div className="w-2 h-2 rounded-full bg-traffic-green/60" />
+                      <span className="text-xs text-muted-foreground">W-In: 7</span>
+                    </div>
+                  </div>
+                  
+                  {/* West Road - Outgoing */}
+                  <div className="absolute left-4 top-1/2 transform -translate-y-1/2 translate-y-8">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 rounded-full bg-traffic-amber/80 shadow-lg shadow-yellow-500/30 animate-pulse" />
+                      <div className="w-2 h-2 rounded-full bg-traffic-amber/60" />
+                      <span className="text-xs text-muted-foreground">W-Out: 11</span>
+                    </div>
+                  </div>
+                      <span className="text-xs text-muted-foreground">S-Out: 6</span>
+                  {/* Emergency Vehicle Indicator */}
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-20">
+                    <div className="bg-emergency/20 p-2 rounded-full animate-pulse border border-emergency/40">
+                      <Ambulance className="h-6 w-6 text-emergency" />
+                    </div>
+                  </div>
+                      <div className="w-2 h-2 rounded-full bg-traffic-green/60" />
+                  {/* Legend */}
+                  <div className="absolute bottom-4 left-4 bg-card/90 backdrop-blur-sm rounded-lg p-3 border border-accent/20">
+                    <div className="space-y-2">
+                      <div className="text-xs font-medium text-foreground mb-2">Traffic Density</div>
+                      <div className="flex items-center space-x-4 text-xs">
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 rounded-full traffic-light-green mr-2 shadow-sm" />
+                          <span>Low (0-10)</span>
+                        </div>
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 rounded-full traffic-light-amber mr-2 shadow-sm" />
+                          <span>Medium (11-15)</span>
+                        </div>
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 rounded-full traffic-light-red mr-2 shadow-sm" />
+                          <span>High (16+)</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                      <div className="w-3 h-3 rounded-full bg-traffic-green/80 shadow-lg shadow-green-500/30 animate-pulse" />
                   {/* Emergency Status */}
                   <div className="absolute top-4 right-4 bg-emergency/10 backdrop-blur-sm rounded-lg p-2 border border-emergency/30">
                     <div className="flex items-center text-sm text-emergency">
@@ -407,13 +417,27 @@ export default function Overview() {
                       <span className="text-xs">Emergency Override</span>
                     </div>
                   </div>
-
+                    </div>
                   {/* Live Data Indicator */}
                   <div className="absolute top-4 left-4 bg-accent/10 backdrop-blur-sm rounded-lg p-2 border border-accent/30">
                     <div className="flex items-center text-sm text-accent">
                       <div className="w-2 h-2 bg-accent rounded-full mr-2 animate-pulse" />
                       <span className="text-xs">Live Data</span>
                     </div>
+                  </div>
+                  </div>
+                  {/* Road Direction Labels */}
+                  <div className="absolute top-2 left-1/2 transform -translate-x-1/2 text-xs text-muted-foreground font-medium">
+                    North
+                  </div>
+                  <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-xs text-muted-foreground font-medium">
+                    South
+                  </div>
+                  <div className="absolute left-2 top-1/2 transform -translate-y-1/2 -rotate-90 text-xs text-muted-foreground font-medium">
+                    West
+                  </div>
+                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2 rotate-90 text-xs text-muted-foreground font-medium">
+                    East
                   </div>
                 </div>
               </CardContent>
