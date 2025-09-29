@@ -4,20 +4,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
-import { 
-  Clock, 
-  TrendingDown, 
-  Ambulance, 
-  Leaf,
-  Play,
-  Activity,
-  MapPin,
-  Zap,
-  Monitor,
-  Globe,
-  Settings,
-  BarChart3
-} from "lucide-react";
+import { Clock, TrendingDown, Ambulance, Leaf, Play, Activity, MapPin, Zap, Monitor, Globe, Settings, ChartBar as BarChart3 } from "lucide-react";
 
 // Animated counter component
 function AnimatedCounter({ 

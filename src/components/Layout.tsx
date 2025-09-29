@@ -2,20 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth, UserRole } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Home, 
-  Monitor, 
-  Settings, 
-  BarChart3, 
-  Map,
-  Users,
-  Globe,
-  LogIn,
-  LogOut,
-  Shield,
-  Truck,
-  UserCheck
-} from "lucide-react";
+import { Chrome as Home, Monitor, Settings, ChartBar as BarChart3, Map, Users, Globe, LogIn, LogOut, Shield, Truck, UserCheck } from "lucide-react";
 
 interface NavItem {
   name: string;
